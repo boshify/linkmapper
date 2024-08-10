@@ -49,9 +49,9 @@ def create_interactive_graph(df):
     
     # Add edges based on the generated link table
     for idx, row in df.iterrows():
-        for i in range(1, 6):  # Assuming a maximum of 5 links per row
-            link_url = row[f'Link {i} URL']
-            if pd.notnull(link_url):
+        for i in range(1, 11):  # Adjust to handle up to 10 links per row (link_count max value)
+            link_url_col = f'Link {i} URL'
+            if link_url_col in df.columns and pd.notnull(row[link_url_col]):
                 target_keyword = row[f'Link {i} Anchor Text']
                 G.add_edge(row['Target Keyword'], target_keyword)
     
@@ -66,7 +66,7 @@ def create_interactive_graph(df):
     
     # Customize nodes and edges appearance
     for node in net.nodes:
-        node['title'] = node['label']  # Ensure the label is visible without clicking
+        node['title'] = f"{node['label']} (Links: {G.degree[node['id']]})"  # Tooltip with link count
         node['label'] = node['id']  # Show the target keyword directly
         node['value'] = G.degree[node['id']]  # Node size based on degree (number of connections)
         node['labelHighlightBold'] = True  # Highlight label for better visibility
@@ -203,14 +203,22 @@ if uploaded_file:
         # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
-        
-        # Step 9: Create and display the interactive graph
-        st.subheader("Interactive Topic Map")
-        
-        net = create_interactive_graph(df)
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
-            path = tmpfile.name
-            net.save_graph(path)
-            st.components.v1.html(open(path).read(), height=800, scrolling=True)
- 
+
+        # Step 9: Generate Visualization Button
+        if st.button("Generate Visualization"):
+            st.subheader("Interactive Topic Map")
+            
+            net = create_interactive_graph(df)
+            
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
+                path = tmpfile.name
+                net.save_graph(path)
+                st.components.v1.html(open(path).read(), height=800, scrolling=True)
+                
+            # Step 10: Download Visualization Button
+            st.download_button(
+                label="Download Visualization",
+                data=open(path).read(),
+                file_name="internal_linking_visualization.html",
+                mime="text/html"
+            )
