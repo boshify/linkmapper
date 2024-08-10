@@ -52,8 +52,9 @@ def create_interactive_graph(df):
         for i in range(1, 11):  # Adjust to handle up to 10 links per row (link_count max value)
             link_url_col = f'Link {i} URL'
             if link_url_col in df.columns and pd.notnull(row[link_url_col]):
+                source_keyword = row['Target Keyword']
                 target_keyword = row[f'Link {i} Anchor Text']
-                G.add_edge(row['Target Keyword'], target_keyword)
+                G.add_edge(source_keyword, target_keyword)
     
     # Create the pyvis network
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
