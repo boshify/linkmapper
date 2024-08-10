@@ -76,33 +76,33 @@ def create_interactive_graph(df):
         edge['width'] = 2  # Set a consistent edge width
     
     # Enable node selection to highlight connections and dim unconnected nodes
-    net.set_options("""
-    var options = {
-      nodes: {
-        font: {
-          size: 12,
-          color: '#ffffff'
+    net.set_options('''
+    {
+      "nodes": {
+        "font": {
+          "size": 12,
+          "color": "#ffffff"
         }
       },
-      edges: {
-        color: {
-          inherit: 'both'
+      "edges": {
+        "color": {
+          "inherit": "both"
         },
-        smooth: false
+        "smooth": false
       },
-      interaction: {
-        hover: true,
-        tooltipDelay: 200,
-        hideEdgesOnDrag: true
+      "interaction": {
+        "hover": true,
+        "tooltipDelay": 200,
+        "hideEdgesOnDrag": true
       },
-      physics: {
-        stabilization: {
-          enabled: true,
-          iterations: 1000
+      "physics": {
+        "stabilization": {
+          "enabled": true,
+          "iterations": 1000
         }
       }
     }
-    """)
+    ''')
     
     return net
 
