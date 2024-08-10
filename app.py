@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
+import math
 
 # Function to calculate relevance scores
 def calculate_relevance_scores(df, title_tag_column):
@@ -9,6 +10,12 @@ def calculate_relevance_scores(df, title_tag_column):
     tfidf_matrix = vectorizer.fit_transform(df[title_tag_column])
     relevance_scores = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return relevance_scores
+
+# Function to calculate minimum link limit needed
+def calculate_minimum_link_limit(df, hub_spoke_column):
+    spoke_count = df[df[hub_spoke_column] == "Spoke"].shape[0]
+    # Minimum link limit is 5 links per spoke, spread across all other spokes
+    return math.ceil(5 * spoke_count / (spoke_count - 1))
 
 # Streamlit UI
 st.title("Internal Linking Mapper")
@@ -27,9 +34,16 @@ if uploaded_file:
     title_tag_column = st.selectbox("Select the Page Title Tag column", df.columns)
     url_column = st.selectbox("Select the Full URL column", df.columns)
     
+    # Calculate the minimum link limit required
+    min_link_limit = calculate_minimum_link_limit(df, hub_spoke_column)
+    
     # Step 3: Repeat Limit Slider
     repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=2)
     
+    # Warning if the repeat limit is too low
+    if repeat_limit < min_link_limit:
+        st.warning(f"You need a link limit of at least {min_link_limit} to ensure every URL gets 5 links.")
+
     # Step 4: Map Links Button
     if st.button("Map Links"):
         relevance_scores = calculate_relevance_scores(df, title_tag_column)
@@ -78,5 +92,5 @@ if uploaded_file:
         st.dataframe(df)
         
         # Step 6: Download CSV
-        output_file_name = uploaded_file.name.replace(".csv", "") + "- Internal Links.csv"
+        output_file_name = uploaded_file.name.replace(".csv", "") + "- Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
