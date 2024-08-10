@@ -41,8 +41,9 @@ if uploaded_file:
     repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=2)
     
     # Warning if the repeat limit is too low
+    row_count = df.shape[0]
     if repeat_limit < min_link_limit:
-        st.warning(f"You need a link limit of at least {min_link_limit} to ensure every URL gets 5 links.")
+        st.warning(f"{row_count} rows detected. You need a link limit of at least {min_link_limit} to ensure every URL gets 5 links.")
 
     # Step 4: Map Links Button
     if st.button("Map Links"):
