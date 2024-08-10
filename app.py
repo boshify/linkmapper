@@ -39,7 +39,7 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                 if links_added == link_count:
                     break
 
-# Function to create an interactive bubble graph
+# Function to create an interactive bubble graph with improvements
 def create_interactive_graph(df, relevance_scores):
     G = nx.Graph()
     
@@ -50,11 +50,26 @@ def create_interactive_graph(df, relevance_scores):
     # Add edges based on relevance scores
     for i in range(len(df)):
         for j in range(i + 1, len(df)):
-            if relevance_scores[i][j] > 0.1:  # Only add an edge if relevance is significant
-                G.add_edge(df.iloc[i]['Target Keyword'], df.iloc[j]['Target Keyword'], weight=relevance_scores[i][j])
+            relevance_score = relevance_scores[i][j]
+            if relevance_score > 0.05:  # Lower the threshold to include more connections
+                G.add_edge(df.iloc[i]['Target Keyword'], df.iloc[j]['Target Keyword'], weight=relevance_score)
     
+    # Create the pyvis network
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
+    
+    # Configure physics to enable force-directed layout
+    net.barnes_hut()
+    
+    # Add nodes and edges from networkx graph to pyvis network
     net.from_nx(G)
+    
+    # Customize nodes and edges appearance
+    for node in net.nodes:
+        node['title'] = f"{node['id']} (Links: {G.degree[node['id']]})"
+        node['value'] = G.degree[node['id']]  # Node size based on degree (number of connections)
+    
+    for edge in net.edges:
+        edge['width'] = edge['weight'] * 10  # Edge width based on relevance score
     
     return net
 
@@ -164,4 +179,5 @@ if uploaded_file:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
             path = tmpfile.name
             net.save_graph(path)
+            st.components.v1.html(open
             st.components.v1.html(open(path).read(), height=800, scrolling=True)
