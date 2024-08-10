@@ -80,6 +80,7 @@ if uploaded_file:
             sorted_scores_idx = sorted(range(len(title_scores)), key=lambda k: title_scores[k], reverse=True)
             
             top_links = []
+            # First pass: try to use links within their repeat limit
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
                 url = df.at[link_idx, url_column]
                 if link_usage[url] < repeat_limit:
@@ -88,13 +89,13 @@ if uploaded_file:
                 if len(top_links) == link_count:
                     break
             
-            # Ensure every row gets the desired amount of links, even if the limit is reached
+            # Second pass: if Map Every Row is checked, ensure every row gets the required number of links, even if it exceeds the repeat limit
             if map_every_row and len(top_links) < link_count:
                 for link_idx in sorted_scores_idx[1:]:
                     url = df.at[link_idx, url_column]
                     if len(top_links) == link_count:
                         break
-                    if link_idx not in top_links and link_usage[url] < repeat_limit:
+                    if link_idx not in top_links:
                         top_links.append(link_idx)
                         link_usage[url] += 1
             
