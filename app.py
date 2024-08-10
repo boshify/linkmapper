@@ -89,11 +89,12 @@ if uploaded_file:
                     break
             
             # Ensure every row gets the desired amount of links, even if the limit is reached
-            if map_every_row:
+            if map_every_row and len(top_links) < link_count:
                 for link_idx in sorted_scores_idx[1:]:
+                    url = df.at[link_idx, url_column]
                     if len(top_links) == link_count:
                         break
-                    if link_idx not in top_links:
+                    if link_idx not in top_links and link_usage[url] < repeat_limit:
                         top_links.append(link_idx)
                         link_usage[url] += 1
             
