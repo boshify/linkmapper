@@ -11,36 +11,31 @@ def calculate_relevance_scores(df, title_tag_column):
     relevance_scores = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return relevance_scores
 
-# Function to calculate minimum link limit needed
-def calculate_minimum_link_limit(df, hub_spoke_column, link_count):
-    spoke_count = df[df[hub_spoke_column] == "Spoke"].shape[0]
-    # Minimum link limit is 'link_count' links per spoke, spread across all other spokes
-    return math.ceil(link_count * spoke_count / (spoke_count - 1))
-
 # Function to calculate minimum repeat limit needed
 def calculate_minimum_repeat_limit(df, link_count):
-    return max(1, math.ceil(link_count / 2))  # Ensure the repeat limit is at least 1
+    total_links_needed = len(df) * link_count
+    total_unique_links = len(df)
+    return max(1, math.ceil(total_links_needed / total_unique_links))
 
-# Function to ensure every link reaches its repeat limit
-def ensure_all_links_used(df, link_usage, repeat_limit, link_count):
-    unused_links = {url: repeat_limit - usage for url, usage in link_usage.items() if usage < repeat_limit}
+# Function to ensure every link reaches its repeat limit and no row is left without links
+def ensure_balanced_link_usage(df, link_usage, repeat_limit, link_count):
+    # List of all URLs
+    all_urls = df['Full URL'].tolist()
 
+    # Iterate over each row to ensure every row has the required number of links
     for idx, row in df.iterrows():
-        if row.isnull().any():  # Find rows that didn't receive all links
-            title_scores = row['Relevance Scores']
-            sorted_scores_idx = sorted(range(len(title_scores)), key=lambda k: title_scores[k], reverse=True)
-            
-            for link_idx in sorted_scores_idx[1:]:
-                url = df.at[link_idx, 'Full URL']
-                if url in unused_links and unused_links[url] > 0:
-                    link_usage[url] += 1
-                    unused_links[url] -= 1
+        if pd.isnull(row[f'Link 1 URL']):  # Row has no links
+            links_added = 0
+            for url in all_urls:
+                if link_usage[url] < repeat_limit and links_added < link_count:
                     for i in range(link_count):
                         if pd.isnull(row[f'Link {i+1} URL']):
                             df.at[idx, f'Link {i+1} URL'] = url
-                            df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, 'Target Keyword']
+                            df.at[idx, f'Link {i+1} Anchor Text'] = df.loc[df['Full URL'] == url, 'Target Keyword'].values[0]
+                            link_usage[url] += 1
+                            links_added += 1
                             break
-                if all(v == 0 for v in unused_links.values()):
+                if links_added == link_count:
                     break
 
 # Streamlit UI
@@ -63,9 +58,6 @@ if uploaded_file:
     # Step 3: Link Count Slider
     link_count = st.slider("Set Number of Internal Links per Page", min_value=1, max_value=10, value=5)
     
-    # Calculate the minimum link limit required
-    min_link_limit = calculate_minimum_link_limit(df, hub_spoke_column, link_count)
-    
     # Calculate the minimum repeat limit required
     min_repeat_limit = calculate_minimum_repeat_limit(df, link_count)
     
@@ -77,7 +69,7 @@ if uploaded_file:
 
     # Warning if the repeat limit is too low
     row_count = df.shape[0]
-    st.warning(f"{row_count} rows detected. You need a link per page limit of at least {min_link_limit} or a repeat link limit of at least {min_repeat_limit} to ensure every URL gets {link_count} links.")
+    st.warning(f"{row_count} rows detected. You need a repeat link limit of at least {min_repeat_limit} to ensure every URL gets {link_count} links.")
     
     # Step 6: Map Links Button
     if st.button("Map Links"):
@@ -129,8 +121,8 @@ if uploaded_file:
                 df.at[idx, f'Link {i+1} URL'] = df.at[link_idx, url_column]
                 df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, target_keyword_column]
         
-        # Ensure every link reaches the repeat limit
-        ensure_all_links_used(df, link_usage, repeat_limit, link_count)
+        # Ensure balanced link usage and that no row is left without links
+        ensure_balanced_link_usage(df, link_usage, repeat_limit, link_count)
         
         st.write("Processing Complete!")
         
