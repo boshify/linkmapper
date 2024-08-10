@@ -3,9 +3,6 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import math
-import networkx as nx
-from pyvis.network import Network
-import tempfile
 
 # Function to calculate relevance scores
 def calculate_relevance_scores(df, title_tag_column):
@@ -39,76 +36,6 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                 if links_added == link_count:
                     break
 
-# Function to create an interactive graph based on the generated link table
-def create_interactive_graph(df):
-    G = nx.Graph()
-    
-    # Add nodes based on Target Keywords
-    for idx, row in df.iterrows():
-        G.add_node(row['Target Keyword'], title=row['Page Title Tag'], label=row['Target Keyword'])
-    
-    # Add edges based on the generated link table
-    for idx, row in df.iterrows():
-        source_keyword = row['Target Keyword']
-        for i in range(1, 11):  # Handle up to 10 links per row
-            link_url_col = f'Link {i} URL'
-            if link_url_col in df.columns and pd.notnull(row[link_url_col]):
-                target_keyword = row[f'Link {i} Anchor Text']
-                G.add_edge(source_keyword, target_keyword)
-    
-    # Create the pyvis network
-    net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
-    
-    # Configure physics to enable force-directed layout
-    net.barnes_hut()
-    
-    # Add nodes and edges from networkx graph to pyvis network
-    net.from_nx(G)
-    
-    # Customize nodes and edges appearance
-    for node in net.nodes:
-        node['title'] = f"{node['label']} (Links: {G.degree[node['id']]})"  # Tooltip with link count
-        node['label'] = node['id']  # Show the target keyword directly
-        node['value'] = G.degree[node['id']]  # Node size based on degree (number of connections)
-        node['labelHighlightBold'] = True  # Highlight label for better visibility
-        node['font'] = {"size": 12}  # Adjust font size to ensure all labels are visible
-    
-    for edge in net.edges:
-        edge['width'] = 2  # Set a consistent edge width
-    
-    # Enable node selection to highlight connections and dim unconnected nodes
-    net.set_options('''
-    {
-      "nodes": {
-        "font": {
-          "size": 12,
-          "color": "#ffffff"
-        }
-      },
-      "edges": {
-        "color": {
-          "inherit": "both"
-        },
-        "smooth": false
-      },
-      "interaction": {
-        "hover": true,
-        "tooltipDelay": 200,
-        "hideEdgesOnDrag": true,
-        "selectConnectedEdges": true,
-        "multiselect": true
-      },
-      "physics": {
-        "stabilization": {
-          "enabled": true,
-          "iterations": 1000
-        }
-      }
-    }
-    ''')
-    
-    return net
-
 # Streamlit UI
 st.title("Internal Linking Mapper")
 
@@ -117,9 +44,6 @@ uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
-    
-    # Store data in session state
-    st.session_state['df'] = df
     
     # Step 2: Map fields
     st.subheader("Map your fields")
@@ -206,31 +130,6 @@ if uploaded_file:
         # Step 7: Show the processed DataFrame in the Streamlit UI
         st.dataframe(df)
         
-        # Enable Generate Visualization and Download Visualization buttons
-        st.session_state['link_map_generated'] = True
-
         # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
-
-# Step 9: Generate Visualization Button (only shown after link map is generated)
-if st.session_state.get('link_map_generated', False):
-    if st.button("Generate Visualization"):
-        st.subheader("Interactive Topic Map")
-        
-        df = st.session_state.get('df')  # Retrieve the DataFrame from session state
-        
-        net = create_interactive_graph(df)
-        
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
-            path = tmpfile.name
-            net.save_graph(path)
-            st.components.v1.html(open(path).read(), height=800, scrolling=True)
-            
-        # Step 10: Download Visualization Button
-        st.download_button(
-            label="Download Visualization",
-            data=open(path).read(),
-            file_name="internal_linking_visualization.html",
-            mime="text/html"
-        )
