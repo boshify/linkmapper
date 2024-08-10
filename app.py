@@ -5,6 +5,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 import math
 import networkx as nx
 from pyvis.network import Network
+import tempfile
 
 # Function to calculate relevance scores
 def calculate_relevance_scores(df, title_tag_column):
@@ -54,6 +55,7 @@ def create_interactive_graph(df, relevance_scores):
     
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
     net.from_nx(G)
+    
     return net
 
 # Streamlit UI
@@ -156,6 +158,10 @@ if uploaded_file:
         
         # Step 9: Create and display the interactive graph
         st.subheader("Interactive Topic Map")
+        
         net = create_interactive_graph(df, relevance_scores)
-        net.show("interactive_graph.html")
-        st.components.v1.html(open("interactive_graph.html").read(), height=800, scrolling=True)
+        
+        with tempfile.NamedTemporaryFile(delete=False) as tmpfile:
+            path = tmpfile.name
+            net.save_graph(path)
+            st.components.v1.html(open(path).read(), height=800, scrolling=True)
