@@ -15,7 +15,7 @@ def calculate_relevance_scores(df, title_tag_column):
     return relevance_scores
 
 # Function to calculate minimum repeat limit needed
-def calculate_minimum_repeat limit(df, link_count):
+def calculate_minimum_repeat_limit(df, link_count):
     total_links_needed = len(df) * link_count
     total unique_links = len(df)
     return max(1, math.ceil(total_links_needed / total_unique_links))
