@@ -39,7 +39,7 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                 if links_added == link_count:
                     break
 
-# Function to create an interactive bubble graph based on the generated link table
+# Function to create an interactive graph based on the generated link table
 def create_interactive_graph(df):
     G = nx.Graph()
     
@@ -49,10 +49,10 @@ def create_interactive_graph(df):
     
     # Add edges based on the generated link table
     for idx, row in df.iterrows():
-        for i in range(1, 11):  # Adjust to handle up to 10 links per row (link_count max value)
+        source_keyword = row['Target Keyword']
+        for i in range(1, 11):  # Handle up to 10 links per row
             link_url_col = f'Link {i} URL'
             if link_url_col in df.columns and pd.notnull(row[link_url_col]):
-                source_keyword = row['Target Keyword']
                 target_keyword = row[f'Link {i} Anchor Text']
                 G.add_edge(source_keyword, target_keyword)
     
@@ -94,7 +94,9 @@ def create_interactive_graph(df):
       "interaction": {
         "hover": true,
         "tooltipDelay": 200,
-        "hideEdgesOnDrag": true
+        "hideEdgesOnDrag": true,
+        "selectConnectedEdges": true,
+        "multiselect": true
       },
       "physics": {
         "stabilization": {
@@ -210,9 +212,6 @@ if uploaded_file:
         # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
-
-        # Enable Generate Visualization and Download Visualization buttons
-        st.session_state['link_map_generated'] = True
 
 # Step 9: Generate Visualization Button (only shown after link map is generated)
 if st.session_state.get('link_map_generated', False):
