@@ -17,6 +17,10 @@ def calculate_minimum_link_limit(df, hub_spoke_column, link_count):
     # Minimum link limit is 'link_count' links per spoke, spread across all other spokes
     return math.ceil(link_count * spoke_count / (spoke_count - 1))
 
+# Function to calculate minimum repeat limit needed
+def calculate_minimum_repeat_limit(df, link_count):
+    return math.ceil(link_count / 2)  # Example calculation; you can adjust this based on your logic
+
 # Streamlit UI
 st.title("Internal Linking Mapper")
 
@@ -40,6 +44,9 @@ if uploaded_file:
     # Calculate the minimum link limit required
     min_link_limit = calculate_minimum_link_limit(df, hub_spoke_column, link_count)
     
+    # Calculate the minimum repeat limit required
+    min_repeat_limit = calculate_minimum_repeat_limit(df, link_count)
+    
     # Step 4: Repeat Limit Slider
     repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=2)
     
@@ -48,7 +55,7 @@ if uploaded_file:
 
     # Warning if the repeat limit is too low
     row_count = df.shape[0]
-    st.warning(f"{row_count} rows detected. You need a link limit of at least {min_link_limit} to ensure every URL gets {link_count} links.")
+    st.warning(f"{row_count} rows detected. You need a link per page limit of at least {min_link_limit} or a repeat link limit of at least {min_repeat_limit} to ensure every URL gets {link_count} links.")
     
     # Step 6: Map Links Button
     if st.button("Map Links"):
