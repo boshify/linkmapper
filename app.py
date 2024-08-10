@@ -3,27 +3,17 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 
-# Function to calculate relevance score
-def calculate_relevance_scores(df, title_tag_column, keyword_column):
+# Function to calculate relevance scores
+def calculate_relevance_scores(df, title_tag_column):
     vectorizer = TfidfVectorizer()
     tfidf_matrix = vectorizer.fit_transform(df[title_tag_column])
-    
     relevance_scores = cosine_similarity(tfidf_matrix, tfidf_matrix)
-    df['Relevance Scores'] = relevance_scores.tolist()
-    
-    # Tie breaker using target keyword relevance if necessary
-    if keyword_column in df.columns:
-        keyword_vectorizer = TfidfVectorizer()
-        keyword_tfidf = keyword_vectorizer.fit_transform(df[keyword_column])
-        keyword_scores = cosine_similarity(keyword_tfidf, keyword_tfidf)
-        df['Keyword Relevance'] = keyword_scores.tolist()
-    
-    return df
+    return relevance_scores
 
 # Streamlit UI
 st.title("Internal Linking Mapper")
 
-# Step 2: Upload CSV
+# Step 1: Upload CSV
 uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 
 if uploaded_file:
@@ -37,9 +27,13 @@ if uploaded_file:
     title_tag_column = st.selectbox("Select the Page Title Tag column", df.columns)
     url_column = st.selectbox("Select the Full URL column", df.columns)
     
-    # Step 3: Map Links Button
+    # Step 3: Repeat Limit Slider
+    repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=2)
+    
+    # Step 4: Map Links Button
     if st.button("Map Links"):
-        df = calculate_relevance_scores(df, title_tag_column, target_keyword_column)
+        relevance_scores = calculate_relevance_scores(df, title_tag_column)
+        df['Relevance Scores'] = relevance_scores.tolist()
         
         new_columns = ['Hub Link URL', 'Hub Link Anchor Text', 
                        'Link 1 URL', 'Link 1 Anchor Text', 
@@ -51,13 +45,24 @@ if uploaded_file:
         for col in new_columns:
             df[col] = ""
         
-        # Step 4: Process each row and calculate top 5 links
+        # Initialize a dictionary to track link usage
+        link_usage = {url: 0 for url in df[url_column]}
+        
+        st.write("Processing Rows...")
+        
+        # Process each row and calculate top 5 links
         for idx, row in df.iterrows():
-            st.write(f"Processing row {idx + 1}...")
             title_scores = row['Relevance Scores']
             sorted_scores_idx = sorted(range(len(title_scores)), key=lambda k: title_scores[k], reverse=True)
             
-            top_5 = sorted_scores_idx[1:6]  # Skip the first one as it's the row itself
+            top_5 = []
+            for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
+                url = df.at[link_idx, url_column]
+                if link_usage[url] < repeat_limit:
+                    top_5.append(link_idx)
+                    link_usage[url] += 1
+                if len(top_5) == 5:
+                    break
             
             if row[hub_spoke_column] == "Spoke":
                 df.at[idx, 'Hub Link URL'] = df[df[hub_spoke_column] == "Hub"][url_column].values[0]
