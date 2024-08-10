@@ -3,6 +3,8 @@ import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import math
+import networkx as nx
+from pyvis.network import Network
 
 # Function to calculate relevance scores
 def calculate_relevance_scores(df, title_tag_column):
@@ -35,6 +37,24 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                             break
                 if links_added == link_count:
                     break
+
+# Function to create an interactive bubble graph
+def create_interactive_graph(df, relevance_scores):
+    G = nx.Graph()
+    
+    # Add nodes with target keywords
+    for idx, row in df.iterrows():
+        G.add_node(row['Target Keyword'], title=row['Page Title Tag'])
+    
+    # Add edges based on relevance scores
+    for i in range(len(df)):
+        for j in range(i + 1, len(df)):
+            if relevance_scores[i][j] > 0.1:  # Only add an edge if relevance is significant
+                G.add_edge(df.iloc[i]['Target Keyword'], df.iloc[j]['Target Keyword'], weight=relevance_scores[i][j])
+    
+    net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
+    net.from_nx(G)
+    return net
 
 # Streamlit UI
 st.title("Internal Linking Mapper")
@@ -133,3 +153,9 @@ if uploaded_file:
         # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
+        
+        # Step 9: Create and display the interactive graph
+        st.subheader("Interactive Topic Map")
+        net = create_interactive_graph(df, relevance_scores)
+        net.show("interactive_graph.html")
+        st.components.v1.html(open("interactive_graph.html").read(), height=800, scrolling=True)
