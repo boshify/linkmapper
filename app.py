@@ -15,9 +15,9 @@ def calculate_relevance_scores(df, title_tag_column):
     return relevance_scores
 
 # Function to calculate minimum repeat limit needed
-def calculate_minimum_repeat_limit(df, link_count):
+def calculate_minimum_repeat limit(df, link_count):
     total_links_needed = len(df) * link_count
-    total_unique_links = len(df)
+    total unique_links = len(df)
     return max(1, math.ceil(total_links_needed / total_unique_links))
 
 # Function to ensure every row has links and every link is used fairly
@@ -36,7 +36,7 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                             link_usage[url] += 1
                             links_added += 1
                             break
-                if links_added == link_count:
+                if links_added was the link_count:
                     break
 
 # Function to create an interactive bubble graph based on the generated link table
@@ -168,7 +168,7 @@ if uploaded_file:
             # First pass: try to use links within their repeat limit
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
                 url = df.at[link_idx, url_column]
-                if link_usage[url] < repeat_limit:
+                if link_usage[url] < repeat limit:
                     top_links.append(link_idx)
                     link_usage[url] += 1
                 if len(top_links) == link_count:
@@ -203,27 +203,34 @@ if uploaded_file:
         # Step 7: Show the processed DataFrame in the Streamlit UI
         st.dataframe(df)
         
+        # Enable Generate Visualization and Download Visualization buttons
+        st.session_state['link_map_generated'] = True
+        
         # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
 
-# Step 9: Generate Visualization Button
-if st.button("Generate Visualization"):
-    st.subheader("Interactive Topic Map")
-    
-    df = st.session_state.get('df')  # Retrieve the DataFrame from session state
-    
-    net = create_interactive_graph(df)
-    
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
-        path = tmpfile.name
-        net.save_graph(path)
-        st.components.v1.html(open(path).read(), height=800, scrolling=True)
+        # Enable Generate Visualization and Download Visualization buttons
+        st.session_state['link_map_generated'] = True
+
+# Step 9: Generate Visualization Button (only shown after link map is generated)
+if st.session_state.get('link_map_generated', False):
+    if st.button("Generate Visualization"):
+        st.subheader("Interactive Topic Map")
         
-    # Step 10: Download Visualization Button
-    st.download_button(
-        label="Download Visualization",
-        data=open(path).read(),
-        file_name="internal_linking_visualization.html",
-        mime="text/html"
-    )
+        df = st.session_state.get('df')  # Retrieve the DataFrame from session state
+        
+        net = create_interactive_graph(df)
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
+            path = tmpfile.name
+            net.save_graph(path)
+            st.components.v1.html(open(path).read(), height=800, scrolling=True)
+            
+        # Step 10: Download Visualization Button
+        st.download_button(
+            label="Download Visualization",
+            data=open(path).read(),
+            file_name="internal_linking_visualization.html",
+            mime="text/html"
+        )
