@@ -46,10 +46,9 @@ if uploaded_file:
     # Step 5: Map Every Row? Checkbox
     map_every_row = st.checkbox("Map Every Row?")
 
-    # Warning if the repeat limit is too low and "Map Every Row?" is not checked
+    # Warning if the repeat limit is too low
     row_count = df.shape[0]
-    if not map_every_row and repeat_limit < min_link_limit:
-        st.warning(f"{row_count} rows detected. You need a link limit of at least {min_link_limit} to ensure every URL gets {link_count} links.")
+    st.warning(f"{row_count} rows detected. You need a link limit of at least {min_link_limit} to ensure every URL gets {link_count} links.")
     
     # Step 6: Map Links Button
     if st.button("Map Links"):
@@ -76,11 +75,20 @@ if uploaded_file:
             top_links = []
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
                 url = df.at[link_idx, url_column]
-                if map_every_row or link_usage[url] < repeat_limit:
+                if link_usage[url] < repeat_limit:
                     top_links.append(link_idx)
                     link_usage[url] += 1
                 if len(top_links) == link_count:
                     break
+            
+            # Ensure every row gets the desired amount of links, even if the limit is reached
+            if map_every_row:
+                for link_idx in sorted_scores_idx[1:]:
+                    if len(top_links) == link_count:
+                        break
+                    if link_idx not in top_links:
+                        top_links.append(link_idx)
+                        link_usage[url] += 1
             
             if row[hub_spoke_column] == "Spoke":
                 df.at[idx, 'Hub Link URL'] = df[df[hub_spoke_column] == "Hub"][url_column].values[0]
