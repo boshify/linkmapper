@@ -43,12 +43,15 @@ if uploaded_file:
     # Step 4: Repeat Limit Slider
     repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=2)
     
-    # Warning if the repeat limit is too low
+    # Step 5: Map Every Row? Checkbox
+    map_every_row = st.checkbox("Map Every Row?")
+
+    # Warning if the repeat limit is too low and "Map Every Row?" is not checked
     row_count = df.shape[0]
-    if repeat_limit < min_link_limit:
+    if not map_every_row and repeat_limit < min_link_limit:
         st.warning(f"{row_count} rows detected. You need a link limit of at least {min_link_limit} to ensure every URL gets {link_count} links.")
     
-    # Step 5: Map Links Button
+    # Step 6: Map Links Button
     if st.button("Map Links"):
         relevance_scores = calculate_relevance_scores(df, title_tag_column)
         df['Relevance Scores'] = relevance_scores.tolist()
@@ -73,7 +76,7 @@ if uploaded_file:
             top_links = []
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
                 url = df.at[link_idx, url_column]
-                if link_usage[url] < repeat_limit:
+                if map_every_row or link_usage[url] < repeat_limit:
                     top_links.append(link_idx)
                     link_usage[url] += 1
                 if len(top_links) == link_count:
@@ -89,9 +92,9 @@ if uploaded_file:
         
         st.write("Processing Complete!")
         
-        # Step 6: Show the processed DataFrame in the Streamlit UI
+        # Step 7: Show the processed DataFrame in the Streamlit UI
         st.dataframe(df)
         
-        # Step 7: Download CSV
+        # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + "- Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
