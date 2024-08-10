@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text.TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 import math
 import networkx as nx
@@ -69,7 +69,8 @@ def create_interactive_graph(df, relevance_scores):
         node['value'] = G.degree[node['id']]  # Node size based on degree (number of connections)
     
     for edge in net.edges:
-        edge['width'] = edge['weight'] * 10  # Edge width based on relevance score
+        if 'weight' in edge:  # Check if the weight attribute is present
+            edge['width'] = edge['weight'] * 10  # Edge width based on relevance score
     
     return net
 
