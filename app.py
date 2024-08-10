@@ -17,17 +17,15 @@ def calculate_minimum_repeat_limit(df, link_count):
     total_unique_links = len(df)
     return max(1, math.ceil(total_links_needed / total_unique_links))
 
-# Function to ensure every link reaches its repeat limit and no row is left without links
-def ensure_balanced_link_usage(df, link_usage, repeat_limit, link_count):
-    # List of all URLs
+# Function to ensure every row has links and every link is used fairly
+def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
     all_urls = df['Full URL'].tolist()
-
-    # Iterate over each row to ensure every row has the required number of links
+    
     for idx, row in df.iterrows():
-        if pd.isnull(row[f'Link 1 URL']):  # Row has no links
+        if pd.isnull(row[f'Link 1 URL']):  # Check if the row has no links
             links_added = 0
             for url in all_urls:
-                if link_usage[url] < repeat_limit and links_added < link_count:
+                if link_usage[url] < repeat_limit or links_added < link_count:
                     for i in range(link_count):
                         if pd.isnull(row[f'Link {i+1} URL']):
                             df.at[idx, f'Link {i+1} URL'] = url
@@ -121,8 +119,8 @@ if uploaded_file:
                 df.at[idx, f'Link {i+1} URL'] = df.at[link_idx, url_column]
                 df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, target_keyword_column]
         
-        # Ensure balanced link usage and that no row is left without links
-        ensure_balanced_link_usage(df, link_usage, repeat_limit, link_count)
+        # Ensure no row is left without links
+        ensure_no_row_without_links(df, link_usage, repeat_limit, link_count)
         
         st.write("Processing Complete!")
         
