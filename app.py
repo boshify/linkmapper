@@ -19,7 +19,29 @@ def calculate_minimum_link_limit(df, hub_spoke_column, link_count):
 
 # Function to calculate minimum repeat limit needed
 def calculate_minimum_repeat_limit(df, link_count):
-    return math.ceil(link_count / 2)  # Example calculation; you can adjust this based on your logic
+    return max(1, math.ceil(link_count / 2))  # Ensure the repeat limit is at least 1
+
+# Function to ensure every link reaches its repeat limit
+def ensure_all_links_used(df, link_usage, repeat_limit, link_count):
+    unused_links = {url: repeat_limit - usage for url, usage in link_usage.items() if usage < repeat_limit}
+
+    for idx, row in df.iterrows():
+        if row.isnull().any():  # Find rows that didn't receive all links
+            title_scores = row['Relevance Scores']
+            sorted_scores_idx = sorted(range(len(title_scores)), key=lambda k: title_scores[k], reverse=True)
+            
+            for link_idx in sorted_scores_idx[1:]:
+                url = df.at[link_idx, 'Full URL']
+                if url in unused_links and unused_links[url] > 0:
+                    link_usage[url] += 1
+                    unused_links[url] -= 1
+                    for i in range(link_count):
+                        if pd.isnull(row[f'Link {i+1} URL']):
+                            df.at[idx, f'Link {i+1} URL'] = url
+                            df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, 'Target Keyword']
+                            break
+                if all(v == 0 for v in unused_links.values()):
+                    break
 
 # Streamlit UI
 st.title("Internal Linking Mapper")
@@ -48,7 +70,7 @@ if uploaded_file:
     min_repeat_limit = calculate_minimum_repeat_limit(df, link_count)
     
     # Step 4: Repeat Limit Slider
-    repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=2)
+    repeat_limit = st.slider("Set Repeat Limit", min_value=1, max_value=10, value=min_repeat_limit)
     
     # Step 5: Map Every Row? Checkbox
     map_every_row = st.checkbox("Map Every Row?")
@@ -106,6 +128,9 @@ if uploaded_file:
             for i, link_idx in enumerate(top_links):
                 df.at[idx, f'Link {i+1} URL'] = df.at[link_idx, url_column]
                 df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, target_keyword_column]
+        
+        # Ensure every link reaches the repeat limit
+        ensure_all_links_used(df, link_usage, repeat_limit, link_count)
         
         st.write("Processing Complete!")
         
