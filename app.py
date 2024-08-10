@@ -39,20 +39,21 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                 if links_added == link_count:
                     break
 
-# Function to create an interactive bubble graph with improvements
-def create_interactive_graph(df, relevance_scores):
+# Function to create an interactive bubble graph based on the generated link table
+def create_interactive_graph(df):
     G = nx.Graph()
     
-    # Add nodes with target keywords
+    # Add nodes based on Target Keywords
     for idx, row in df.iterrows():
-        G.add_node(row['Target Keyword'], title=row['Page Title Tag'])
+        G.add_node(row['Target Keyword'], title=row['Page Title Tag'], label=row['Target Keyword'])
     
-    # Add edges based on relevance scores
-    for i in range(len(df)):
-        for j in range(i + 1, len(df)):
-            relevance_score = relevance_scores[i][j]
-            if relevance_score > 0.05:  # Lower the threshold to include more connections
-                G.add_edge(df.iloc[i]['Target Keyword'], df.iloc[j]['Target Keyword'], weight=relevance_score)
+    # Add edges based on the generated link table
+    for idx, row in df.iterrows():
+        for i in range(1, 6):  # Assuming a maximum of 5 links per row
+            link_url = row[f'Link {i} URL']
+            if pd.notnull(link_url):
+                target_keyword = row[f'Link {i} Anchor Text']
+                G.add_edge(row['Target Keyword'], target_keyword)
     
     # Create the pyvis network
     net = Network(height="750px", width="100%", bgcolor="#222222", font_color="white")
@@ -65,12 +66,12 @@ def create_interactive_graph(df, relevance_scores):
     
     # Customize nodes and edges appearance
     for node in net.nodes:
-        node['title'] = f"{node['id']} (Links: {G.degree[node['id']]})"
+        node['title'] = node['label']  # Ensure the label is visible without clicking
         node['value'] = G.degree[node['id']]  # Node size based on degree (number of connections)
+        node['labelHighlightBold'] = True  # Highlight label for better visibility
     
     for edge in net.edges:
-        if 'weight' in edge:  # Check if the weight attribute is present
-            edge['width'] = edge['weight'] * 10  # Edge width based on relevance score
+        edge['width'] = 2  # Set a consistent edge width
     
     return net
 
@@ -175,7 +176,7 @@ if uploaded_file:
         # Step 9: Create and display the interactive graph
         st.subheader("Interactive Topic Map")
         
-        net = create_interactive_graph(df, relevance_scores)
+        net = create_interactive_graph(df)
         
         with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
             path = tmpfile.name
