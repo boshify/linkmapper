@@ -74,12 +74,10 @@ if uploaded_file:
         relevance_scores = calculate_relevance_scores(df, title_tag_column)
         df['Relevance Scores'] = relevance_scores.tolist()
         
-        new_columns = ['Hub Link URL', 'Hub Link Anchor Text', 'Link 1 Anchor Text']
+        # Define the correct columns for URLs and Anchor Texts
         for i in range(1, link_count + 1):
-            new_columns.extend([f'Link {i} URL', f'Link {i+1} Anchor Text'])
-        
-        for col in new_columns:
-            df[col] = ""
+            df[f'Link {i} URL'] = ""
+            df[f'Link {i} Anchor Text'] = ""
         
         # Initialize a dictionary to track link usage
         link_usage = {url: 0 for url in df[url_column]}
@@ -115,9 +113,8 @@ if uploaded_file:
                 df.at[idx, 'Hub Link Anchor Text'] = df[df[hub_spoke_column] == "Hub"][target_keyword_column].values[0]
             
             for i, link_idx in enumerate(top_links):
-                df.at[idx, 'Link 1 Anchor Text'] = df.at[link_idx, target_keyword_column]
                 df.at[idx, f'Link {i+1} URL'] = df.at[link_idx, url_column]
-                df.at[idx, f'Link {i+2} Anchor Text'] = df.at[link_idx, target_keyword_column]
+                df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, target_keyword_column]
         
         # Add the link usage count next to the Full URL
         df['Usage Count'] = df['Full URL'].map(link_usage)
