@@ -76,7 +76,7 @@ if uploaded_file:
         
         new_columns = ['Hub Link URL', 'Hub Link Anchor Text']
         for i in range(1, link_count + 1):
-            new_columns.extend([f'Link {i} URL', f'Link {i} Anchor Text'])
+            new_columns.extend([f'Link {i} URL', f'Link {i+1} Anchor Text'])
         
         for col in new_columns:
             df[col] = ""
@@ -119,6 +119,9 @@ if uploaded_file:
                 df.at[idx, f'Link {i+1} URL'] = df.at[link_idx, url_column]
                 df.at[idx, f'Link {i+1} Anchor Text'] = df.at[link_idx, target_keyword_column]
         
+        # Add the link usage count next to the Full URL
+        df['Usage Count'] = df['Full URL'].map(link_usage)
+        
         # Ensure no row is left without links
         ensure_no_row_without_links(df, link_usage, repeat_limit, link_count)
         
@@ -128,5 +131,5 @@ if uploaded_file:
         st.dataframe(df)
         
         # Step 8: Download CSV
-        output_file_name = uploaded_file.name.replace(".csv", "") + "- Internal Linking Map.csv"
+        output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
