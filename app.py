@@ -161,7 +161,7 @@ if uploaded_file:
         
         net = create_interactive_graph(df, relevance_scores)
         
-        with tempfile.NamedTemporaryFile(delete=False) as tmpfile:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
             path = tmpfile.name
             net.save_graph(path)
             st.components.v1.html(open(path).read(), height=800, scrolling=True)
