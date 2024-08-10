@@ -25,7 +25,7 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
         if pd.isnull(row[f'Link 1 URL']):  # Check if the row has no links
             links_added = 0
             for url in all_urls:
-                if link_usage[url] < repeat_limit or links_added < link_count:
+                if url != row['Full URL'] and (link_usage[url] < repeat_limit or links_added < link_count):
                     for i in range(link_count):
                         if pd.isnull(row[f'Link {i+1} URL']):
                             df.at[idx, f'Link {i+1} URL'] = url
@@ -95,7 +95,7 @@ if uploaded_file:
             # First pass: try to use links within their repeat limit
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
                 url = df.at[link_idx, url_column]
-                if link_usage[url] < repeat_limit:
+                if url != row['Full URL'] and link_usage[url] < repeat_limit:
                     top_links.append(link_idx)
                     link_usage[url] += 1
                 if len(top_links) == link_count:
@@ -105,11 +105,10 @@ if uploaded_file:
             if map_every_row and len(top_links) < link_count:
                 for link_idx in sorted_scores_idx[1:]:
                     url = df.at[link_idx, url_column]
-                    if len(top_links) == link_count:
-                        break
-                    if link_idx not in top_links:
-                        top_links.append(link_idx)
-                        link_usage[url] += 1
+                    if url != row['Full URL'] and len(top_links) < link_count:
+                        if link_idx not in top_links:
+                            top_links.append(link_idx)
+                            link_usage[url] += 1
             
             if row[hub_spoke_column] == "Spoke":
                 df.at[idx, 'Hub Link URL'] = df[df[hub_spoke_column] == "Hub"][url_column].values[0]
