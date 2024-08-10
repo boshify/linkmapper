@@ -36,7 +36,7 @@ def ensure_no_row_without_links(df, link_usage, repeat_limit, link_count):
                             link_usage[url] += 1
                             links_added += 1
                             break
-                if links_added was the link_count:
+                if links_added == link_count:
                     break
 
 # Function to create an interactive bubble graph based on the generated link table
@@ -168,7 +168,7 @@ if uploaded_file:
             # First pass: try to use links within their repeat limit
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
                 url = df.at[link_idx, url_column]
-                if link_usage[url] < repeat limit:
+                if link_usage[url] < repeat_limit:
                     top_links.append(link_idx)
                     link_usage[url] += 1
                 if len(top_links) == link_count:
@@ -205,7 +205,7 @@ if uploaded_file:
         
         # Enable Generate Visualization and Download Visualization buttons
         st.session_state['link_map_generated'] = True
-        
+
         # Step 8: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
