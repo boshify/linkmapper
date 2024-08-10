@@ -115,6 +115,9 @@ uploaded_file = st.file_uploader("Upload your CSV", type=["csv"])
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
     
+    # Store data in session state
+    st.session_state['df'] = df
+    
     # Step 2: Map fields
     st.subheader("Map your fields")
     cluster_column = st.selectbox("Select the Cluster column", df.columns)
@@ -204,21 +207,23 @@ if uploaded_file:
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
 
-        # Step 9: Generate Visualization Button
-        if st.button("Generate Visualization"):
-            st.subheader("Interactive Topic Map")
-            
-            net = create_interactive_graph(df)
-            
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
-                path = tmpfile.name
-                net.save_graph(path)
-                st.components.v1.html(open(path).read(), height=800, scrolling=True)
-                
-            # Step 10: Download Visualization Button
-            st.download_button(
-                label="Download Visualization",
-                data=open(path).read(),
-                file_name="internal_linking_visualization.html",
-                mime="text/html"
-            )
+# Step 9: Generate Visualization Button
+if st.button("Generate Visualization"):
+    st.subheader("Interactive Topic Map")
+    
+    df = st.session_state.get('df')  # Retrieve the DataFrame from session state
+    
+    net = create_interactive_graph(df)
+    
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".html") as tmpfile:  # Ensure the file has .html extension
+        path = tmpfile.name
+        net.save_graph(path)
+        st.components.v1.html(open(path).read(), height=800, scrolling=True)
+        
+    # Step 10: Download Visualization Button
+    st.download_button(
+        label="Download Visualization",
+        data=open(path).read(),
+        file_name="internal_linking_visualization.html",
+        mime="text/html"
+    )
