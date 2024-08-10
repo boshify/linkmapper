@@ -77,8 +77,8 @@ if uploaded_file:
         # Process each row and calculate top 'link_count' links
         for idx, row in df.iterrows():
             title_scores = row['Relevance Scores']
-            sorted_scores_idx = sorted(range(len(title_scores)), key=lambda k: title_scores[k], reverse=True)
-            
+            sorted_scores_idx = sorted(range(len(title_scores)), key=lambda k: (link_usage[df.at[k, url_column]], -title_scores[k]))
+
             top_links = []
             # First pass: try to use links within their repeat limit
             for link_idx in sorted_scores_idx[1:]:  # Skip the first one as it's the row itself
