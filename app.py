@@ -5,9 +5,10 @@ from sklearn.metrics.pairwise import cosine_similarity
 import math
 
 # Function to calculate relevance scores
-def calculate_relevance_scores(df, title_tag_column):
+def calculate_relevance_scores(df, column1, column2):
     vectorizer = TfidfVectorizer()
-    tfidf_matrix = vectorizer.fit_transform(df[title_tag_column])
+    combined_columns = df[column1] + " " + df[column2]
+    tfidf_matrix = vectorizer.fit_transform(combined_columns)
     relevance_scores = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return relevance_scores
 
@@ -69,15 +70,27 @@ if uploaded_file:
     row_count = df.shape[0]
     st.warning(f"{row_count} rows detected. You need a repeat link limit of at least {min_repeat_limit} to ensure every URL gets {link_count} links.")
     
-    # Step 6: Map Links Button
+    # Step 6: Calculate Relevance Score By
+    st.subheader("Calculate Relevance Score By")
+    st.write("Select two columns to calculate the relevance score.")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        relevance_column1 = st.selectbox("First Column", df.columns)
+    
+    with col2:
+        relevance_column2 = st.selectbox("Second Column", df.columns)
+    
+    # Step 7: Map Links Button
     if st.button("Map Links"):
-        relevance_scores = calculate_relevance_scores(df, title_tag_column)
+        relevance_scores = calculate_relevance_scores(df, relevance_column1, relevance_column2)
         df['Relevance Scores'] = relevance_scores.tolist()
         
         # Define the correct columns for URLs and Anchor Texts
         for i in range(1, link_count + 1):
             df[f'Link {i} URL'] = ""
-            df[f'Link {i} Anchor Text'] = ""
+            df[f'Link {i+1} Anchor Text'] = ""
         
         # Initialize a dictionary to track link usage
         link_usage = {url: 0 for url in df[url_column]}
@@ -124,9 +137,9 @@ if uploaded_file:
         
         st.write("Processing Complete!")
         
-        # Step 7: Show the processed DataFrame in the Streamlit UI
+        # Step 8: Show the processed DataFrame in the Streamlit UI
         st.dataframe(df)
         
-        # Step 8: Download CSV
+        # Step 9: Download CSV
         output_file_name = uploaded_file.name.replace(".csv", "") + " - Internal Linking Map.csv"
         st.download_button(label="Download CSV", data=df.to_csv(index=False), file_name=output_file_name)
