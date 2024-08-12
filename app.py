@@ -72,15 +72,15 @@ if uploaded_file:
     
     # Step 6: Calculate Relevance Score By
     st.subheader("Calculate Relevance Score By")
-    st.write("Select two columns to calculate the relevance score.")
+    st.write("Select two columns to calculate the relevance score by. Example: Target Keyword Vs Title Tag: This will take the target keyword of a row, and calculate the relevance score vs the title tag of every other row.")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        relevance_column1 = st.selectbox("First Column", df.columns)
+        relevance_column1 = st.selectbox("Row Calculation", df.columns)
     
     with col2:
-        relevance_column2 = st.selectbox("Second Column", df.columns)
+        relevance_column2 = st.selectbox("Column Calculation", df.columns)
     
     # Step 7: Map Links Button
     if st.button("Map Links"):
