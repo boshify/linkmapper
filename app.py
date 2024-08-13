@@ -90,7 +90,7 @@ if uploaded_file:
         # Define the correct columns for URLs and Anchor Texts
         for i in range(1, link_count + 1):
             df[f'Link {i} URL'] = ""
-            df[f'Link {i+1} Anchor Text'] = ""
+            df[f'Link {i} Anchor Text'] = ""
         
         # Initialize a dictionary to track link usage
         link_usage = {url: 0 for url in df[url_column]}
