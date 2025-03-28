@@ -7,10 +7,12 @@ import math
 # Function to calculate relevance scores
 def calculate_relevance_scores(df, column1, column2):
     vectorizer = TfidfVectorizer()
-    combined_columns = df[column1] + " " + df[column2]
+    # Fix: ensure columns are strings and handle NaNs
+    combined_columns = (df[column1].fillna('') + ' ' + df[column2].fillna('')).astype(str)
     tfidf_matrix = vectorizer.fit_transform(combined_columns)
     relevance_scores = cosine_similarity(tfidf_matrix, tfidf_matrix)
     return relevance_scores
+
 
 # Function to calculate minimum repeat limit needed
 def calculate_minimum_repeat_limit(df, link_count):
